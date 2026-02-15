@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"github.com/jasutiin/envlink/internal/cli"
+)
 
 func main() {
-	fmt.Println("yeah")
+	cli.Execute()
 };
