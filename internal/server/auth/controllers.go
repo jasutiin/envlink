@@ -7,13 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type AuthRequestBody struct {
+type authRequestBody struct {
 	Email string
 	Password string
 }
 
-func Login(c *gin.Context) {
-	var requestBody AuthRequestBody
+func postLogin(c *gin.Context) {
+	var requestBody authRequestBody
 	if err := c.BindJSON(&requestBody); err != nil {
 		fmt.Printf("error!")
 	}
@@ -23,8 +23,8 @@ func Login(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, requestBody)
 }
 
-func Register(c *gin.Context) {
-	var requestBody AuthRequestBody
+func postRegister(c *gin.Context) {
+	var requestBody authRequestBody
 	if err := c.BindJSON(&requestBody); err != nil {
 		fmt.Printf("error!")
 	}

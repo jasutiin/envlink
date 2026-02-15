@@ -7,13 +7,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type PushRequestBody struct {
+type pushRequestBody struct {
 	ProjectId string
 	Content string
 }
 
-func Push(c *gin.Context) {
-	var requestBody PushRequestBody
+func postPush(c *gin.Context) {
+	var requestBody pushRequestBody
 	if err := c.BindJSON(&requestBody); err != nil {
 		fmt.Printf("error!")
 	}

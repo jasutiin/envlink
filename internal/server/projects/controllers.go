@@ -7,12 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ProjectsRequestBody struct {
+type projectsRequestBody struct {
 	UserId string
 }
 
-func Projects(c *gin.Context) {
-	var requestBody ProjectsRequestBody
+func getProjects(c *gin.Context) {
+	var requestBody projectsRequestBody
 	if err := c.BindJSON(&requestBody); err != nil {
 		fmt.Printf("error!")
 	}

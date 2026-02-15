@@ -5,5 +5,5 @@ import (
 )
 
 func ProjectsRouter(router *gin.RouterGroup) {
-	router.GET("/projects", Projects)
+	router.GET("/projects", getProjects)
 }

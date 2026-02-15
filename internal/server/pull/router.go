@@ -5,5 +5,5 @@ import (
 )
 
 func PullRouter(router *gin.RouterGroup) {
-	router.POST("/pull", Pull)
+	router.POST("/pull", postPull)
 }

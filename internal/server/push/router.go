@@ -5,5 +5,5 @@ import (
 )
 
 func PushRouter(router *gin.RouterGroup) {
-	router.POST("/push", Push)
+	router.POST("/push", postPush)
 }
