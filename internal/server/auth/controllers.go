@@ -58,7 +58,7 @@ func (controller *AuthController) postRegister(c *gin.Context) {
 
 func (controller *AuthController) getAuthCallbackFunction(c *gin.Context) {
 	provider := c.Param("provider")
-	c.Request = c.Request.WithContext(context.WithValue(context.Background(), "provider", provider))
+	c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), "provider", provider))
 
 	user, err := gothic.CompleteUserAuth(c.Writer, c.Request)
 	if err != nil {
@@ -69,6 +69,9 @@ func (controller *AuthController) getAuthCallbackFunction(c *gin.Context) {
 }
 
 func (controller *AuthController) getAuthProvider(c *gin.Context) {
+	provider := c.Param("provider")
+	c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), "provider", provider))
+
 	if _, err := gothic.CompleteUserAuth(c.Writer, c.Request); err == nil {
 		token := "token" // this is supposed to be a JWT
 		c.JSON(http.StatusOK, gin.H{ "token": token })
