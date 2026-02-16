@@ -20,5 +20,5 @@ func main() {
 	pull.PullRouter(api)
 	projects.ProjectsRouter(api)
 
-	server.Run("localhost:8080")
+	server.Run("0.0.0.0:8080")
 };
