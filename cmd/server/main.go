@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jasutiin/envlink/internal/server/auth"
 	"github.com/jasutiin/envlink/internal/server/database"
@@ -20,5 +23,7 @@ func main() {
 	pull.PullRouter(api)
 	projects.ProjectsRouter(api)
 
-	server.Run("0.0.0.0:8080")
+	port := os.Getenv("PORT")
+	fmt.Printf("listening on port %s", port)
+	server.Run("0.0.0.0:" + port)
 };
