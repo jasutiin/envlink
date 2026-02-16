@@ -2,12 +2,16 @@ package auth
 
 import (
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-func AuthRouter(router *gin.RouterGroup) {
+func AuthRouter(router *gin.RouterGroup, db *gorm.DB) {
+	repo := NewRepository(db)
+	controller := NewController(repo)
+
 	auth := router.Group("/auth")
 	{
-		auth.POST("/login", postLogin)
-		auth.POST("/register", postRegister)
+		auth.POST("/login", controller.postLogin)
+		auth.POST("/register", controller.postRegister)
 	}
 }
