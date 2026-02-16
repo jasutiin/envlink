@@ -1,10 +1,12 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/markbates/goth/gothic"
 )
 
 type authRequestBody struct {
@@ -52,4 +54,31 @@ func (controller *AuthController) postRegister(c *gin.Context) {
 	fmt.Println(requestBody.Email)
 	fmt.Println(requestBody.Password)
 	c.IndentedJSON(http.StatusOK, requestBody)
+}
+
+func (controller *AuthController) getAuthCallbackFunction(c *gin.Context) {
+	provider := c.Param("provider")
+	c.Request = c.Request.WithContext(context.WithValue(context.Background(), "provider", provider))
+
+	user, err := gothic.CompleteUserAuth(c.Writer, c.Request)
+	if err != nil {
+		fmt.Fprintln(c.Writer, c.Request)
+	}
+
+	fmt.Println(user)
+}
+
+func (controller *AuthController) getAuthProvider(c *gin.Context) {
+	if _, err := gothic.CompleteUserAuth(c.Writer, c.Request); err == nil {
+		token := "token" // this is supposed to be a JWT
+		c.JSON(http.StatusOK, gin.H{ "token": token })
+	} else {
+		gothic.BeginAuthHandler(c.Writer, c.Request)
+	}
+}
+
+func (controller *AuthController) getLogoutProvider(c *gin.Context) {
+	gothic.Logout(c.Writer, c.Request)
+	c.Writer.Header().Set("Location", "/")
+	c.Writer.WriteHeader(http.StatusTemporaryRedirect)
 }

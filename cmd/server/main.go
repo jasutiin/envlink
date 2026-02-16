@@ -18,6 +18,7 @@ func main() {
 	db := database.CreateDB()
 	database.AutoMigrate(db) // creates tables if they don't exist
 
+	auth.NewAuth()
 	auth.AuthRouter(api, db)
 	push.PushRouter(api)
 	pull.PullRouter(api)

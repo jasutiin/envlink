@@ -13,5 +13,8 @@ func AuthRouter(router *gin.RouterGroup, db *gorm.DB) {
 	{
 		auth.POST("/login", controller.postLogin)
 		auth.POST("/register", controller.postRegister)
+		auth.POST("/:provider/callback", controller.getAuthCallbackFunction)
+		auth.POST("/:provider", controller.getAuthProvider)
+		auth.POST("/:provider/logout", controller.getLogoutProvider)
 	}
 }
