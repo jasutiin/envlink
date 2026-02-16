@@ -9,7 +9,7 @@ I work on two different computers and routinely need to transfer secrets between
 - Gin: Go HTTP web framework for building APIs
 - Supabase (PostgreSQL): Database for storing information
 - Docker: To containerize the server code for deployment
-- Google Cloud Run (tentative): To host the server
+- Railway (tentative): To host the server
 
 ### Project structure
 
@@ -18,6 +18,7 @@ I work on two different computers and routinely need to transfer secrets between
 	- `root.go`: root command with flags and viper config
 	- all other files in this directory are the commands for envlink
 - `server/`: HTTP server code with API endpoints, controllers, and routers
+- `.dockerignore`: I am using Railway to host the server code, and I don't want my CLI related code in the docker image that Railway makes
 
 ### Available commands
 
