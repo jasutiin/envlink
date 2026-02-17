@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"time"
 
@@ -24,6 +25,24 @@ var registerCmd = &cobra.Command{
 }
 
 func register() {
+  var choice string
+  fmt.Println("1) Email/Password")
+  fmt.Println("2) Google")
+
+  fmt.Print("Which auth provider would you like to use? ")
+  fmt.Scanln(&choice)
+
+  switch choice {
+    case "1":
+      registerUsingEmailPassword()
+    case "2":
+      registerUsingGoogle()
+    default:
+      fmt.Println("Cancelled.")
+  }
+}
+
+func registerUsingEmailPassword() {
   var email string;
   var password string;
 
@@ -67,4 +86,73 @@ func register() {
 	} else {
 		fmt.Printf("request failed with status code: %d\n", resp.StatusCode)
 	}
+}
+
+func registerUsingGoogle() {
+  state, err := newCLISessionID()
+  if err != nil {
+    fmt.Println("failed to create auth state")
+    return
+  }
+
+  // listen on localhost with a port assigned by OS
+  listener, err := net.Listen("tcp", "127.0.0.1:0")
+  if err != nil {
+    fmt.Println("failed to start local callback listener")
+    return
+  }
+  defer listener.Close() // this will run when registerUsingGoogle() function returns
+
+  // callback path on the CLI's temporary HTTP server
+  callbackPath := "/oauth/google/callback"
+  callbackURL := fmt.Sprintf("http://%s%s", listener.Addr().String(), callbackPath)
+
+  // make the actual server url that the CLI will call to 
+  authURL := buildServerGoogleAuthURL(callbackURL, state)
+  resultChan := make(chan callbackResult, 1)
+  server := createLocalServer(callbackPath, state, resultChan)
+
+  // run a local server for the CLI
+  go func() {
+    _ = server.Serve(listener)
+  }()
+
+  fmt.Println("Opening browser to:", authURL)
+  if err := openInBrowser(authURL); err != nil {
+    fmt.Println("failed to open browser automatically. Open this URL manually:")
+    fmt.Println(authURL)
+    _ = server.Close()
+    return
+  }
+
+  waitTimer := time.NewTimer(2 * time.Minute)
+  defer waitTimer.Stop()
+
+  var callback callbackResult
+
+  // either wait until the waitTimer runs out, or if a result was returned from the local server
+  select {
+    case callback = <-resultChan:
+      if callback.err != nil {
+        fmt.Printf("google auth did not complete: %v\n", callback.err)
+        _ = server.Close()
+        return
+      }
+    case <-waitTimer.C:
+      fmt.Println("timed out waiting for google authentication")
+      _ = server.Close()
+      return
+  }
+
+  token, err := exchangeServerCode(callback.exchangeCode, callback.state)
+  if err != nil {
+    fmt.Printf("token exchange failed: %v\n", err)
+    _ = server.Close()
+    return
+  }
+
+  _ = server.Close()
+
+  fmt.Println("Google authentication successful.")
+  fmt.Println("Token:", token.accessToken)
 }
