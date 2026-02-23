@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"bytes"
@@ -8,14 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jasutiin/envlink/internal/cli/utils"
 	"github.com/spf13/cobra"
 )
 
-func init() {
-  rootCmd.AddCommand(registerCmd)
-}
-
-var registerCmd = &cobra.Command{
+var RegisterCmd = &cobra.Command{
   Use:   "register",
   Short: "Register to envlink.",
   Long:  `Register to envlink.`,
@@ -89,7 +86,7 @@ func registerUsingEmailPassword() {
 }
 
 func registerUsingGoogle() {
-  state, err := newCLISessionID()
+  state, err := utils.NewCLISessionID()
   if err != nil {
     fmt.Println("failed to create auth state")
     return
@@ -108,9 +105,9 @@ func registerUsingGoogle() {
   callbackURL := fmt.Sprintf("http://%s%s", listener.Addr().String(), callbackPath)
 
   // make the actual server url that the CLI will call to 
-  authURL := buildServerGoogleAuthURL(callbackURL, state)
-  resultChan := make(chan callbackResult, 1)
-  server := createLocalServer(callbackPath, state, resultChan)
+  authURL := utils.BuildServerGoogleAuthURL(callbackURL, state)
+  resultChan := make(chan utils.CallbackResult, 1)
+  server := utils.CreateLocalServer(callbackPath, state, resultChan)
 
   // run a local server for the CLI
   go func() {
@@ -118,7 +115,7 @@ func registerUsingGoogle() {
   }()
 
   fmt.Println("Opening browser to:", authURL)
-  if err := openInBrowser(authURL); err != nil {
+  if err := utils.OpenInBrowser(authURL); err != nil {
     fmt.Println("failed to open browser automatically. Open this URL manually:")
     fmt.Println(authURL)
     _ = server.Close()
@@ -128,13 +125,13 @@ func registerUsingGoogle() {
   waitTimer := time.NewTimer(2 * time.Minute)
   defer waitTimer.Stop()
 
-  var callback callbackResult
+  var callback utils.CallbackResult
 
   // either wait until the waitTimer runs out, or if a result was returned from the local server
   select {
     case callback = <-resultChan:
-      if callback.err != nil {
-        fmt.Printf("google auth did not complete: %v\n", callback.err)
+      if callback.Err != nil {
+        fmt.Printf("google auth did not complete: %v\n", callback.Err)
         _ = server.Close()
         return
       }
@@ -144,7 +141,7 @@ func registerUsingGoogle() {
       return
   }
 
-  token, err := exchangeServerCode(callback.exchangeCode, callback.state)
+  token, err := utils.ExchangeServerCode(callback.ExchangeCode, callback.State)
   if err != nil {
     fmt.Printf("token exchange failed: %v\n", err)
     _ = server.Close()
@@ -154,5 +151,5 @@ func registerUsingGoogle() {
   _ = server.Close()
 
   fmt.Println("Google authentication successful.")
-  fmt.Println("Token:", token.accessToken)
+  fmt.Println("Token:", token.AccessToken)
 }

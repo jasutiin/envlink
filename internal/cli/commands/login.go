@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"bytes"
@@ -10,11 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-  rootCmd.AddCommand(loginCmd)
-}
-
-var loginCmd = &cobra.Command{
+var LoginCmd = &cobra.Command{
   Use:   "login",
   Short: "Login to envlink.",
   Long:  `Login to envlink.`,

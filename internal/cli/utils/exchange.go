@@ -1,4 +1,4 @@
-package cli
+package utils
 
 import (
 	"bytes"
@@ -35,7 +35,17 @@ type googleTokenResult struct {
 	accessToken string
 }
 
-func newCLISessionID() (string, error) {
+type CallbackResult struct {
+	ExchangeCode string
+	State        string
+	Err          error
+}
+
+type GoogleTokenResult struct {
+	AccessToken string
+}
+
+func NewCLISessionID() (string, error) {
 	b := make([]byte, googleAuthStateBytes)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
@@ -44,7 +54,7 @@ func newCLISessionID() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-func buildServerGoogleAuthURL(callbackURL, state string) string {
+func BuildServerGoogleAuthURL(callbackURL, state string) string {
 	baseURL := "http://localhost:8080/api/v1/auth/google"
 	values := url.Values{}
 	values.Set("cli_callback", callbackURL)
@@ -57,7 +67,7 @@ func buildServerGoogleAuthURL(callbackURL, state string) string {
 This function creates a local server on the machine. This is used for listening to the browser's callback
 function, which will be called if the server returns successfully.
 */
-func createLocalServer(callbackPath, expectedState string, resultChan chan<- callbackResult) *http.Server {
+func CreateLocalServer(callbackPath, expectedState string, resultChan chan<- CallbackResult) *http.Server {
 	mux := http.NewServeMux()
 	server := &http.Server{Handler: mux}
 
@@ -68,7 +78,7 @@ func createLocalServer(callbackPath, expectedState string, resultChan chan<- cal
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte("<h1>Authentication failed</h1><p>Return to your CLI and try again.</p>"))
-			resultChan <- callbackResult{err: fmt.Errorf("oauth error: %s", oauthErr)}
+			resultChan <- CallbackResult{Err: fmt.Errorf("oauth error: %s", oauthErr)}
 			return
 		}
 
@@ -78,14 +88,14 @@ func createLocalServer(callbackPath, expectedState string, resultChan chan<- cal
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte("<h1>Invalid callback</h1><p>State validation failed.</p>"))
-			resultChan <- callbackResult{err: fmt.Errorf("invalid oauth callback state")}
+			resultChan <- CallbackResult{Err: fmt.Errorf("invalid oauth callback state")}
 			return
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("<h1>Authentication complete</h1><p>You can close this window and return to the CLI.</p>"))
-		resultChan <- callbackResult{exchangeCode: exchangeCode, state: returnedState}
+		resultChan <- CallbackResult{ExchangeCode: exchangeCode, State: returnedState}
 	})
 
 	return server
@@ -95,7 +105,7 @@ func createLocalServer(callbackPath, expectedState string, resultChan chan<- cal
 This function takes the exchange code and checks if it exists in the server. If it doesn't, then it may have expired and
 the user would have to redo the auth process. If it does, return an authentication token
 */
-func exchangeServerCode(exchangeCode, state string) (*googleTokenResult, error) {
+func ExchangeServerCode(exchangeCode, state string) (*GoogleTokenResult, error) {
 	payload := tokenExchangeRequest{ExchangeCode: exchangeCode, State: state}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
@@ -133,10 +143,10 @@ func exchangeServerCode(exchangeCode, state string) (*googleTokenResult, error) 
 		return nil, fmt.Errorf("empty token response")
 	}
 
-	return &googleTokenResult{accessToken: exchangeResp.Token}, nil
+	return &GoogleTokenResult{AccessToken: exchangeResp.Token}, nil
 }
 
-func openInBrowser(targetURL string) error {
+func OpenInBrowser(targetURL string) error {
 	if err := exec.Command("rundll32", "url.dll,FileProtocolHandler", targetURL).Start(); err == nil {
 		return nil
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jasutiin/envlink/internal/cli/commands"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -38,12 +39,12 @@ func init() {
 	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
 	viper.SetDefault("license", "apache")
 
-	rootCmd.AddCommand(loginCmd)
-	rootCmd.AddCommand(registerCmd)
-	rootCmd.AddCommand(pushCmd)
-	rootCmd.AddCommand(pullCmd)
-	rootCmd.AddCommand(projectsCmd)
-	rootCmd.AddCommand(storeCmd)
+	rootCmd.AddCommand(commands.LoginCmd)
+	rootCmd.AddCommand(commands.RegisterCmd)
+	rootCmd.AddCommand(commands.PushCmd)
+	rootCmd.AddCommand(commands.PullCmd)
+	rootCmd.AddCommand(commands.ProjectsCmd)
+	rootCmd.AddCommand(commands.StoreCmd)
 }
 
 func initConfig() {

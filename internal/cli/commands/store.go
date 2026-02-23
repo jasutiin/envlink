@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"fmt"
@@ -6,11 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-  rootCmd.AddCommand(storeCmd)
-}
-
-var storeCmd = &cobra.Command{
+var StoreCmd = &cobra.Command{
   Use:   "store",
   Short: "Store your secret key.",
   Long:  `Store your secret key that was generated when you first registered.`,
