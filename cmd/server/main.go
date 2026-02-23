@@ -30,14 +30,17 @@ func main() {
 	db := database.CreateDB()
 	database.AutoMigrate(db) // creates tables if they don't exist
 
+	// empty RAILWAY_ENVIRONMENT_NAME means dev environment, otherwise production
+	isProd := os.Getenv("RAILWAY_ENVIRONMENT_NAME") != ""
+
 	key := os.Getenv("COOKIE_SESSION_KEY")
 	if key == "" {
-		key = "dev-key-123"
+		log.Fatalf("COOKIE_SESSION_KEY is required")
 	}
-	
+
 	domain := os.Getenv("RAILWAY_PUBLIC_DOMAIN")
 
-	err = auth.NewAuth(port, domain, key)
+	err = auth.NewAuth(port, domain, key, isProd)
 	if err != nil {
 		log.Fatalf("Failed to initialize auth: %s", err)
 	}

@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/gorilla/sessions"
@@ -15,7 +16,7 @@ import (
 This function is called to initialize the gothic package with the external
 providers we will be using for OAuth.
 */
-func NewAuth(port string, domain string, key string) error {
+func NewAuth(port string, domain string, key string, isProd bool) error {
 	googleClientId := os.Getenv("GOOGLE_CLIENT_ID")
 	if googleClientId == "" {
 		return errors.New("Google Client Id was not provided!")
@@ -27,6 +28,13 @@ func NewAuth(port string, domain string, key string) error {
 	}
 
 	store := sessions.NewCookieStore([]byte(key))
+	store.Options = &sessions.Options{
+		Path:     "/", // cookie is valid for all paths on the host
+		MaxAge:   86400 * 30,
+		HttpOnly: true,
+		Secure:   isProd,
+		SameSite: http.SameSiteLaxMode,
+	}
 
 	var url string
 
