@@ -30,17 +30,25 @@ const (
 	cliCookieTTLSeconds   = 300
 )
 
+/*
+newCLIExchangeStore initializes a new store and creates a new cliExchangeEntry map
+so it is allocated. It doesn't create a mutex because the mutex's default value of 0 means
+that it is unlocked.
+*/
 func newCLIExchangeStore() *cliExchangeStore {
 	return &cliExchangeStore{entries: make(map[string]cliExchangeEntry)}
 }
 
+/*
+Save saves a new cliExchangeEntry to the cliExchangeStore.
+*/
 func (store *cliExchangeStore) Save(exchangeCode, state, token string, ttl time.Duration) {
 	if exchangeCode == "" || state == "" || token == "" {
 		return
 	}
 
 	store.mu.Lock()
-	defer store.mu.Unlock()
+	defer store.mu.Unlock() // store.mu.Unlock() is called before Save() returns
 
 	store.entries[exchangeCode] = cliExchangeEntry{
 		token:     token,
@@ -49,16 +57,19 @@ func (store *cliExchangeStore) Save(exchangeCode, state, token string, ttl time.
 	}
 }
 
+/*
+Consume consumes a cliExchangeEntry given an exchange code
+*/
 func (store *cliExchangeStore) Consume(exchangeCode, state string) (string, bool) {
 	store.mu.Lock()
-	defer store.mu.Unlock()
+	defer store.mu.Unlock() // store.mu.Unlock() is called before Consume() returns
 
 	entry, found := store.entries[exchangeCode]
 	if !found {
 		return "", false
 	}
 
-	delete(store.entries, exchangeCode)
+	delete(store.entries, exchangeCode) // deletes the entry with exchangeCode as its key from the store.entries map
 
 	if time.Now().After(entry.expiresAt) {
 		return "", false
@@ -74,7 +85,7 @@ func (store *cliExchangeStore) Consume(exchangeCode, state string) (string, bool
 var pendingCLIExchanges = newCLIExchangeStore()
 
 /*
-This function checks if the callback url is something valid that a user
+isAllowedCLICallback checks if the callback url is something valid that a user
 initiated themselves. This prevents the server from returning a different
 callback url that the user expects. If we did not check this, the user may
 be taken to a malicious website.
@@ -94,7 +105,7 @@ func isAllowedCLICallback(rawCallbackURL string) bool {
 }
 
 /*
-This function sets httpOnly cookies for the callback url and state separately, both with an expiration time.
+writeCLIAuthContext sets httpOnly cookies for the callback url and state separately, both with an expiration time.
 It adds it to the Gin context object which adds it to the response the server sends back. From there,
 the browser would be sending these cookies to the server upon each subsequent request.
 */
@@ -104,7 +115,7 @@ func writeCLIAuthContext(c *gin.Context, callbackURL, state string) {
 }
 
 /*
-This function checks if the caller has cookies storing the callback url and state.
+readCLIAuthContext checks if the caller has cookies storing the callback url and state.
 */
 func readCLIAuthContext(c *gin.Context) (string, string, bool) {
 	callbackCookie, callbackErr := c.Cookie(cliCallbackCookieName)
@@ -122,7 +133,7 @@ func readCLIAuthContext(c *gin.Context) (string, string, bool) {
 }
 
 /*
-This function clears cookies from the response, signalling that we have successfully
+clearCLIAuthContext clears cookies from the response, signalling that we have successfully
 received the user's credentials.
 */
 func clearCLIAuthContext(c *gin.Context) {
@@ -131,7 +142,7 @@ func clearCLIAuthContext(c *gin.Context) {
 }
 
 /*
-This function creates a new exchange code that the browser will use to verify
+newExchangeCode creates a new exchange code that the browser will use to verify
 against the server.
 */
 func newExchangeCode() (string, error) {
@@ -143,6 +154,10 @@ func newExchangeCode() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
+/*
+buildCLIRedirectURL creates a redirect URL with the callback URL and exchange code that we
+received after logging in with an auth provider.
+*/
 func buildCLIRedirectURL(callbackURL, exchangeCode, state string) (string, error) {
 	parsedURL, err := url.Parse(callbackURL)
 	if err != nil {
