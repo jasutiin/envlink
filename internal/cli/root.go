@@ -27,6 +27,7 @@ func Execute() error {
 	return rootCmd.Execute()
 }
 
+// init initializes the root CLI command: registers initConfig to run on startup, defines persistent flags (config, author, license, viper), binds those flags to Viper keys and sets Viper defaults, and attaches exported subcommands from the commands package.
 func init() {
 	cobra.OnInitialize(initConfig)
 
@@ -47,6 +48,11 @@ func init() {
 	rootCmd.AddCommand(commands.StoreCmd)
 }
 
+// initConfig initializes Viper configuration for the CLI.
+// If cfgFile is set, that file is used; otherwise the function configures Viper
+// to look for a YAML config named .cobra in the user's home directory.
+// It enables automatic environment variable support and, if a config file is found
+// and read successfully, prints the path of the used config file.
 func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.

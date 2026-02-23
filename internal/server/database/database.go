@@ -10,6 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// CreateDB creates a GORM DB connection configured from environment variables.
+// It attempts to load a .env file and reads DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, and DB_PORT; errors are printed and not returned, and the function may return nil if the connection cannot be opened.
 func CreateDB() *gorm.DB {
 	err := godotenv.Load()
 	if err != nil {
@@ -32,6 +34,8 @@ func CreateDB() *gorm.DB {
 	return db
 }
 
+// AutoMigrate applies schema migrations for the auth.User model to the provided database.
+// If migration fails, the error is printed to standard output and no error is returned.
 func AutoMigrate(db *gorm.DB) {
 	if err := db.AutoMigrate(&auth.User{}); err != nil {
 		fmt.Println("migrate failed:", err)

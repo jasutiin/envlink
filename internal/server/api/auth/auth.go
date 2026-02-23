@@ -12,10 +12,14 @@ import (
 	"github.com/markbates/goth/providers/google"
 )
 
-/*
-This function is called to initialize the gothic package with the external
-providers we will be using for OAuth.
-*/
+// NewAuth initializes the Gothic OAuth configuration with Google as the provider.
+// It reads GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET from the environment and returns
+// an error if either is missing. NewAuth creates a cookie store using key and
+// configures session options (path "/", 30-day max age, HttpOnly, Secure set
+// from isProd, SameSite Lax). It sets the provider callback URL to
+// "http://localhost:<port>/api/v1/auth/google/callback" when domain is empty,
+// otherwise "https://<domain>/api/v1/auth/google/callback", registers the Google
+// provider with Goth, and assigns the cookie store to gothic.Store.
 func NewAuth(port string, domain string, key string, isProd bool) error {
 	googleClientId := os.Getenv("GOOGLE_CLIENT_ID")
 	if googleClientId == "" {

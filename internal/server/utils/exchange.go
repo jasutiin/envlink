@@ -30,11 +30,7 @@ const (
 	cliCookieTTLSeconds   = 300
 )
 
-/*
-newCLIExchangeStore initializes a new store and creates a new cliExchangeEntry map
-so it is allocated. It doesn't create a mutex because the mutex's default value of 0 means
-that it is unlocked.
-*/
+// The store's mutex is left as the zero value (unlocked).
 func newCLIExchangeStore() *cliExchangeStore {
 	return &cliExchangeStore{entries: make(map[string]cliExchangeEntry)}
 }
@@ -84,12 +80,8 @@ func (store *cliExchangeStore) Consume(exchangeCode, state string) (string, bool
 
 var PendingCLIExchanges = newCLIExchangeStore()
 
-/*
-isAllowedCLICallback checks if the callback url is something valid that a user
-initiated themselves. This prevents the server from returning a different
-callback url that the user expects. If we did not check this, the user may
-be taken to a malicious website.
-*/
+// IsAllowedCLICallback reports whether rawCallbackURL is an allowed local HTTP callback URL.
+// It accepts only URLs with scheme "http" and hostname "localhost", "127.0.0.1", or "::1".
 func IsAllowedCLICallback(rawCallbackURL string) bool {
 	parsedURL, err := url.Parse(rawCallbackURL)
 	if err != nil {
@@ -104,19 +96,20 @@ func IsAllowedCLICallback(rawCallbackURL string) bool {
 	return hostName == "localhost" || hostName == "127.0.0.1" || hostName == "::1"
 }
 
-/*
-writeCLIAuthContext sets httpOnly cookies for the callback url and state separately, both with an expiration time.
-It adds it to the Gin context object which adds it to the response the server sends back. From there,
-the browser would be sending these cookies to the server upon each subsequent request.
-*/
+// WriteCLIAuthContext sets HTTP-only cookies on the provided Gin context to persist a URL-escaped
+// callback URL and the state value for a CLI authentication flow. The cookies are set for path "/",
+// use the package TTL (cliCookieTTLSeconds), and are not marked as secure. The callback value is URL-escaped
+// before being stored.
 func WriteCLIAuthContext(c *gin.Context, callbackURL, state string) {
 	c.SetCookie(cliCallbackCookieName, url.QueryEscape(callbackURL), cliCookieTTLSeconds, "/", "", false, true)
 	c.SetCookie(cliStateCookieName, state, cliCookieTTLSeconds, "/", "", false, true)
 }
 
-/*
-readCLIAuthContext checks if the caller has cookies storing the callback url and state.
-*/
+// ReadCLIAuthContext reads the CLI callback URL and state from HTTP cookies, validates and URL-decodes the callback, and returns them when valid.
+// 
+// It expects cookies named "envlink_cli_callback" and "envlink_cli_state". The callback value is URL-decoded and must be an allowed local HTTP callback (for example, localhost, 127.0.0.1, or ::1).
+//
+// Returns the decoded callback URL, the state value, and `true` on success; otherwise returns empty strings and `false`.
 func ReadCLIAuthContext(c *gin.Context) (string, string, bool) {
 	callbackCookie, callbackErr := c.Cookie(cliCallbackCookieName)
 	stateCookie, stateErr := c.Cookie(cliStateCookieName)
@@ -132,19 +125,14 @@ func ReadCLIAuthContext(c *gin.Context) (string, string, bool) {
 	return decodedCallback, stateCookie, true
 }
 
-/*
-clearCLIAuthContext clears cookies from the response, signalling that we have successfully
-received the user's credentials.
-*/
+// ClearCLIAuthContext clears the CLI authentication cookies on the response, removing the stored callback URL and state by expiring their cookies.
 func ClearCLIAuthContext(c *gin.Context) {
 	c.SetCookie(cliCallbackCookieName, "", -1, "/", "", false, true)
 	c.SetCookie(cliStateCookieName, "", -1, "/", "", false, true)
 }
 
-/*
-newExchangeCode creates a new exchange code that the browser will use to verify
-against the server.
-*/
+// NewExchangeCode returns a new random exchange code encoded as a 48-character hex string.
+// It reads 24 cryptographically secure random bytes and returns their hex encoding, or an error if random generation fails.
 func NewExchangeCode() (string, error) {
 	b := make([]byte, 24)
 	if _, err := rand.Read(b); err != nil {
@@ -154,10 +142,9 @@ func NewExchangeCode() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-/*
-buildCLIRedirectURL creates a redirect URL with the callback URL and exchange code that we
-received after logging in with an auth provider.
-*/
+// BuildCLIRedirectURL constructs a redirect URL by adding the "exchange_code" and "state"
+// query parameters to the provided callbackURL.
+// It returns the resulting URL string, or an error if callbackURL cannot be parsed.
 func BuildCLIRedirectURL(callbackURL, exchangeCode, state string) (string, error) {
 	parsedURL, err := url.Parse(callbackURL)
 	if err != nil {

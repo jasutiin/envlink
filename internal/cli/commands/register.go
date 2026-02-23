@@ -21,6 +21,9 @@ var RegisterCmd = &cobra.Command{
 	},
 }
 
+// register displays authentication provider options, reads the user's choice,
+// and invokes the corresponding registration flow (email/password or Google),
+// or prints "Cancelled." for any other input.
 func register() {
 	var choice string
 	fmt.Println("1) Email/Password")
@@ -39,6 +42,8 @@ func register() {
 	}
 }
 
+// registerUsingEmailPassword reads email and password from standard input, POSTs them as JSON to http://localhost:8080/api/v1/auth/register, and reports the HTTP status.
+// It prints whether each credential was provided, uses a 10-second HTTP client timeout, logs a fatal error if the request cannot be performed, and prints success for 2xx responses or failure otherwise.
 func registerUsingEmailPassword() {
 	var email string
 	var password string
@@ -85,6 +90,9 @@ func registerUsingEmailPassword() {
 	}
 }
 
+// registerUsingGoogle initiates a local OAuth flow with Google, opens the user's browser for authentication,
+// waits for a callback on a temporary local server, exchanges the received code for an access token, and prints the token.
+// On failure (listener/startup error, browser open failure, callback error, timeout, or token exchange error) it prints an explanatory message and returns.
 func registerUsingGoogle() {
 	state, err := cliutils.NewCLISessionID()
 	if err != nil {

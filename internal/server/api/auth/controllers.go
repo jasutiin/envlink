@@ -25,6 +25,8 @@ type AuthController struct {
 	repo AuthRepository
 }
 
+// NewController creates a new AuthController configured with the provided AuthRepository.
+// The controller uses the repository to perform authentication operations.
 func NewController(repo AuthRepository) *AuthController {
 	return &AuthController{repo: repo}
 }

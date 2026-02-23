@@ -39,7 +39,9 @@ type GoogleTokenResult struct {
 //
 // The CLI includes this state in the browser auth request and validates that
 // the same value is returned on callback. This binds the callback to the
-// original login attempt and helps prevent CSRF/callback-injection attacks.
+// NewCLISessionID generates a cryptographically secure random hex-encoded string to use as the CLI OAuth session state.
+// The value encodes googleAuthStateBytes random bytes (hex length 2*googleAuthStateBytes) and is suitable for mitigating CSRF and callback-injection attacks.
+// It returns the encoded state or an error if random byte generation fails.
 func NewCLISessionID() (string, error) {
 	b := make([]byte, googleAuthStateBytes)
 	if _, err := rand.Read(b); err != nil {
@@ -51,7 +53,8 @@ func NewCLISessionID() (string, error) {
 
 // BuildServerGoogleAuthURL builds the API auth endpoint URL for CLI login.
 // It attaches the local callback URL and CLI state so the server can redirect
-// back to the CLI listener and preserve request integrity across the flow.
+// BuildServerGoogleAuthURL constructs the local server URL that initiates Google OAuth for the CLI.
+// The returned URL targets the local API auth endpoint and includes `cli_callback` and `cli_state` query parameters set to the provided callbackURL and state respectively.
 func BuildServerGoogleAuthURL(callbackURL, state string) string {
 	baseURL := "http://localhost:8080/api/v1/auth/google"
 	values := url.Values{}
@@ -61,10 +64,11 @@ func BuildServerGoogleAuthURL(callbackURL, state string) string {
 	return baseURL + "?" + values.Encode()
 }
 
-/*
-This function creates a local server on the machine. This is used for listening to the browser's callback
-function, which will be called if the server returns successfully.
-*/
+// CreateLocalServer returns an *http.Server configured to handle the OAuth browser callback at callbackPath.
+// It validates that the returned state matches expectedState and that an exchange code is present.
+// On a successful callback it writes a success HTML response and sends a CallbackResult with ExchangeCode and State to resultChan.
+// On error or validation failure it writes an error HTML response and sends a CallbackResult containing an Err to resultChan.
+// The returned server is configured with the handler but is not started (caller must call ListenAndServe or Start).
 func CreateLocalServer(callbackPath, expectedState string, resultChan chan<- CallbackResult) *http.Server {
 	mux := http.NewServeMux()
 	server := &http.Server{Handler: mux}
@@ -102,18 +106,9 @@ func CreateLocalServer(callbackPath, expectedState string, resultChan chan<- Cal
 	return server
 }
 
-/*
-ExchangeServerCode sends the one-time exchange code from the local OAuth callback to the API.
-
-The API validates that:
-1) the exchange code exists and is still valid,
-2) the state value matches what was originally issued,
-3) the code has not already been consumed.
-
-If validation succeeds, the server returns an auth token for the CLI session.
-If validation fails (expired/invalid code, state mismatch, or server rejection),
-this function returns an error so the user can retry login.
-*/
+// ExchangeServerCode posts the one-time exchange code and state to the local API and returns the CLI access token.
+// It sends the code and state to the local exchange endpoint, validates the server response, and returns a GoogleTokenResult
+// containing the access token, or an error if the server rejects the exchange or the response is invalid.
 func ExchangeServerCode(exchangeCode, state string) (*GoogleTokenResult, error) {
 	// build the payload the API expects for code/state validation
 	payload := tokenExchangeRequest{ExchangeCode: exchangeCode, State: state}
@@ -161,7 +156,8 @@ func ExchangeServerCode(exchangeCode, state string) (*GoogleTokenResult, error) 
 	return &GoogleTokenResult{AccessToken: exchangeResp.Token}, nil
 }
 
-// OpenInBrowser opens a targetURL in a browser.
+// OpenInBrowser opens targetURL in the system default web browser on Windows.
+// It returns any error encountered while attempting to launch the browser.
 func OpenInBrowser(targetURL string) error {
 	if err := exec.Command("rundll32", "url.dll,FileProtocolHandler", targetURL).Start(); err == nil {
 		return nil

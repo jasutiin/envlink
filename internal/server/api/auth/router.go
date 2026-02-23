@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
+//   - GET   /auth/:provider/logout      -> provider logout
 func AuthRouter(router *gin.RouterGroup, db *gorm.DB) {
 	repo := NewRepository(db)
 	controller := NewController(repo)

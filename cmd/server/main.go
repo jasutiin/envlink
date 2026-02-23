@@ -14,6 +14,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// main initializes application configuration and starts the HTTP server.
+// It loads environment variables, validates required settings (PORT and COOKIE_SESSION_KEY),
+// determines production mode from RAILWAY_ENVIRONMENT_NAME, initializes the database and auth,
+// registers API routes, and runs the Gin server bound to 0.0.0.0 on the configured port.
 func main() {
 	err := godotenv.Load()
 	if err != nil {
