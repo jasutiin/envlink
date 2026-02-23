@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"bytes"
@@ -10,20 +10,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-  rootCmd.AddCommand(registerCmd)
-}
-
-var registerCmd = &cobra.Command{
-  Use:   "register",
-  Short: "Register to envlink.",
-  Long:  `Register to envlink.`,
+var LoginCmd = &cobra.Command{
+  Use:   "login",
+  Short: "Login to envlink.",
+  Long:  `Login to envlink.`,
   Run: func(cmd *cobra.Command, args []string) {
-    register()
+    login()
   },
 }
 
-func register() {
+func login() {
   var email string;
   var password string;
 
@@ -48,10 +44,10 @@ func register() {
   jsonStr := []byte(fmt.Sprintf(`{"email":"%s","password":"%s"}`, email, password))
   payload := bytes.NewBuffer(jsonStr)
   client := &http.Client{Timeout: 10 * time.Second}
-  req, err := http.NewRequest("POST", "http://localhost:8080/api/v1/auth/register", payload)
+  req, err := http.NewRequest("POST", "http://localhost:8080/api/v1/auth/login", payload)
 
   if err != nil {
-    fmt.Println("error on creating new POST req for register")
+    fmt.Println("error on creating new POST req for login")
   }
 
   req.Header.Set("Content-Type", "application/json")

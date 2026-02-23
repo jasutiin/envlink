@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"fmt"
@@ -6,11 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-  rootCmd.AddCommand(projectsCmd)
-}
-
-var projectsCmd = &cobra.Command{
+var ProjectsCmd = &cobra.Command{
   Use:   "projects",
   Short: "Lists all the .envs you have stored.",
   Long:  `Lists all the .envs you have stored.`,

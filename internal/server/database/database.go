@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jasutiin/envlink/internal/server/auth"
+	"github.com/jasutiin/envlink/internal/server/api/auth"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -28,12 +28,12 @@ func CreateDB() *gorm.DB {
 	if err != nil {
 		fmt.Println("failed to open db")
 	}
-	
+
 	return db
 }
 
 func AutoMigrate(db *gorm.DB) {
 	if err := db.AutoMigrate(&auth.User{}); err != nil {
-    fmt.Println("migrate failed:", err)
+		fmt.Println("migrate failed:", err)
 	}
 }
