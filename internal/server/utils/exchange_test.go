@@ -1,4 +1,4 @@
-package auth
+package serverutils
 
 import (
 	"net/url"
@@ -16,7 +16,7 @@ func TestIsAllowedCLICallback(t *testing.T) {
 
 	// all of the urls in allowed slice should return true
 	for _, u := range allowed {
-		if !isAllowedCLICallback(u) {
+		if !IsAllowedCLICallback(u) {
 			t.Errorf("expected allowed for %s", u)
 		}
 	}
@@ -29,20 +29,20 @@ func TestIsAllowedCLICallback(t *testing.T) {
 
 	// all of the urls in disallowed slice should return false
 	for _, u := range disallowed {
-		if isAllowedCLICallback(u) {
+		if IsAllowedCLICallback(u) {
 			t.Errorf("expected disallowed for %s", u)
 		}
 	}
 }
 
-// TestBuildCLIRedirectURL tests if buildCLIRedirectURL() correctly appends
+// TestBuildCLIRedirectURL tests if BuildCLIRedirectURL() correctly appends
 // exchange_code and state to the callback's query string.
 func TestBuildCLIRedirectURL(t *testing.T) {
 	callback := "http://localhost:3000/cb?foo=bar"
 	code := "abc123"
 	state := "s1"
 
-	out, err := buildCLIRedirectURL(callback, code, state)
+	out, err := BuildCLIRedirectURL(callback, code, state)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -61,10 +61,10 @@ func TestBuildCLIRedirectURL(t *testing.T) {
 	}
 }
 
-// TestNewExchangeCode tests if newExchangeCode() returns a non-error hex string
+// TestNewExchangeCode tests if NewExchangeCode() returns a non-error hex string
 // of 48 characters or 24 encoded bytes.
 func TestNewExchangeCode(t *testing.T) {
-	code, err := newExchangeCode()
+	code, err := NewExchangeCode()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

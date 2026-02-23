@@ -6,20 +6,20 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jasutiin/envlink/internal/server/auth"
+	"github.com/jasutiin/envlink/internal/server/api/auth"
+	"github.com/jasutiin/envlink/internal/server/api/projects"
+	"github.com/jasutiin/envlink/internal/server/api/pull"
+	"github.com/jasutiin/envlink/internal/server/api/push"
 	"github.com/jasutiin/envlink/internal/server/database"
-	"github.com/jasutiin/envlink/internal/server/projects"
-	"github.com/jasutiin/envlink/internal/server/pull"
-	"github.com/jasutiin/envlink/internal/server/push"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	err := godotenv.Load()
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Could not load environment variables!")
 	}
-	
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatalf("Port was not provided!")
@@ -52,4 +52,4 @@ func main() {
 
 	fmt.Printf("listening on port %s", port)
 	server.Run("0.0.0.0:" + port)
-};
+}

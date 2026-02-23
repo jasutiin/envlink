@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	serverutils "github.com/jasutiin/envlink/internal/server/utils"
 	"github.com/markbates/goth/gothic"
 )
 
@@ -80,13 +81,13 @@ func (controller *AuthController) getAuthProvider(c *gin.Context) {
 			return
 		}
 
-		if !isAllowedCLICallback(cliCallback) {
+		if !serverutils.IsAllowedCLICallback(cliCallback) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid cli_callback"})
 			return
 		}
 
 		// create httpOnly cookies to use on subsequent requests
-		writeCLIAuthContext(c, cliCallback, cliState)
+		serverutils.WriteCLIAuthContext(c, cliCallback, cliState)
 	}
 
 	gothic.BeginAuthHandler(c.Writer, c.Request)
@@ -108,20 +109,20 @@ func (controller *AuthController) getAuthCallbackFunction(c *gin.Context) {
 		return
 	}
 
-	if callbackURL, callbackState, found := readCLIAuthContext(c); found {
-		exchangeCode, codeErr := newExchangeCode()
+	if callbackURL, callbackState, found := serverutils.ReadCLIAuthContext(c); found {
+		exchangeCode, codeErr := serverutils.NewExchangeCode()
 		if codeErr == nil {
 			// save all of this information on the server so we can refer back to it later
-			pendingCLIExchanges.Save(exchangeCode, callbackState, user.AccessToken, cliExchangeTTL)
-			if redirectURL, redirectErr := buildCLIRedirectURL(callbackURL, exchangeCode, callbackState); redirectErr == nil {
-				clearCLIAuthContext(c)
+			serverutils.PendingCLIExchanges.Save(exchangeCode, callbackState, user.AccessToken, serverutils.CLIExchangeTTL)
+			if redirectURL, redirectErr := serverutils.BuildCLIRedirectURL(callbackURL, exchangeCode, callbackState); redirectErr == nil {
+				serverutils.ClearCLIAuthContext(c)
 				c.Redirect(http.StatusFound, redirectURL)
 				return
 			}
 		}
 	}
 
-	clearCLIAuthContext(c)
+	serverutils.ClearCLIAuthContext(c)
 
 	html := fmt.Sprintf(`
 		<!doctype html>
@@ -160,7 +161,7 @@ func (controller *AuthController) postCLIExchange(c *gin.Context) {
 	}
 
 	// check if the exchange code and state is stored in the server
-	token, found := pendingCLIExchanges.Consume(exchangeCode, state)
+	token, found := serverutils.PendingCLIExchanges.Consume(exchangeCode, state)
 	if !found {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired exchange_code"})
 		return

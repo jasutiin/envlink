@@ -1,4 +1,4 @@
-package auth
+package serverutils
 
 import (
 	"crypto/rand"
@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const cliExchangeTTL = 2 * time.Minute
+const CLIExchangeTTL = 2 * time.Minute
 
 type cliExchangeStore struct {
 	mu      sync.Mutex
@@ -82,7 +82,7 @@ func (store *cliExchangeStore) Consume(exchangeCode, state string) (string, bool
 	return entry.token, true
 }
 
-var pendingCLIExchanges = newCLIExchangeStore()
+var PendingCLIExchanges = newCLIExchangeStore()
 
 /*
 isAllowedCLICallback checks if the callback url is something valid that a user
@@ -90,7 +90,7 @@ initiated themselves. This prevents the server from returning a different
 callback url that the user expects. If we did not check this, the user may
 be taken to a malicious website.
 */
-func isAllowedCLICallback(rawCallbackURL string) bool {
+func IsAllowedCLICallback(rawCallbackURL string) bool {
 	parsedURL, err := url.Parse(rawCallbackURL)
 	if err != nil {
 		return false
@@ -109,7 +109,7 @@ writeCLIAuthContext sets httpOnly cookies for the callback url and state separat
 It adds it to the Gin context object which adds it to the response the server sends back. From there,
 the browser would be sending these cookies to the server upon each subsequent request.
 */
-func writeCLIAuthContext(c *gin.Context, callbackURL, state string) {
+func WriteCLIAuthContext(c *gin.Context, callbackURL, state string) {
 	c.SetCookie(cliCallbackCookieName, url.QueryEscape(callbackURL), cliCookieTTLSeconds, "/", "", false, true)
 	c.SetCookie(cliStateCookieName, state, cliCookieTTLSeconds, "/", "", false, true)
 }
@@ -117,7 +117,7 @@ func writeCLIAuthContext(c *gin.Context, callbackURL, state string) {
 /*
 readCLIAuthContext checks if the caller has cookies storing the callback url and state.
 */
-func readCLIAuthContext(c *gin.Context) (string, string, bool) {
+func ReadCLIAuthContext(c *gin.Context) (string, string, bool) {
 	callbackCookie, callbackErr := c.Cookie(cliCallbackCookieName)
 	stateCookie, stateErr := c.Cookie(cliStateCookieName)
 	if callbackErr != nil || stateErr != nil {
@@ -125,7 +125,7 @@ func readCLIAuthContext(c *gin.Context) (string, string, bool) {
 	}
 
 	decodedCallback, decodeErr := url.QueryUnescape(callbackCookie)
-	if decodeErr != nil || !isAllowedCLICallback(decodedCallback) {
+	if decodeErr != nil || !IsAllowedCLICallback(decodedCallback) {
 		return "", "", false
 	}
 
@@ -136,7 +136,7 @@ func readCLIAuthContext(c *gin.Context) (string, string, bool) {
 clearCLIAuthContext clears cookies from the response, signalling that we have successfully
 received the user's credentials.
 */
-func clearCLIAuthContext(c *gin.Context) {
+func ClearCLIAuthContext(c *gin.Context) {
 	c.SetCookie(cliCallbackCookieName, "", -1, "/", "", false, true)
 	c.SetCookie(cliStateCookieName, "", -1, "/", "", false, true)
 }
@@ -145,7 +145,7 @@ func clearCLIAuthContext(c *gin.Context) {
 newExchangeCode creates a new exchange code that the browser will use to verify
 against the server.
 */
-func newExchangeCode() (string, error) {
+func NewExchangeCode() (string, error) {
 	b := make([]byte, 24)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
@@ -158,7 +158,7 @@ func newExchangeCode() (string, error) {
 buildCLIRedirectURL creates a redirect URL with the callback URL and exchange code that we
 received after logging in with an auth provider.
 */
-func buildCLIRedirectURL(callbackURL, exchangeCode, state string) (string, error) {
+func BuildCLIRedirectURL(callbackURL, exchangeCode, state string) (string, error) {
 	parsedURL, err := url.Parse(callbackURL)
 	if err != nil {
 		return "", err
